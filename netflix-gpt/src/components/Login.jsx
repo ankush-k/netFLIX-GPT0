@@ -1,12 +1,74 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Header from "./Header";
+import { validate } from "../utils/validate";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth } from "../utils/firebase";
 
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(true);
+  const [errMessage, setErrMessage] = useState(null);
+
+  const email = useRef();
+  const password = useRef();
 
   const handleSignUp = (event) => {
     setIsSignIn(!isSignIn);
     event.preventDefault();
+  };
+
+  const handleSubmit = () => {
+    const message = validate(email.current.value, password.current.value);
+
+    setErrMessage(message);
+    if (message) {
+      return;
+    }
+
+    if (isSignIn) {
+      // Sign in logic
+
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+
+          console.log(user);
+          // ...
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+
+          setErrMessage(errorCode + " - " + errorMessage);
+        });
+    } else {
+      // Sign Up logic
+
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+
+          console.log(user);
+          // ...
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          setErrMessage(errorCode + " - " + errorMessage);
+        });
+    }
   };
 
   return (
@@ -19,7 +81,10 @@ const Login = () => {
           alt="bg-poster"
         />
       </div>
-      <form className="absolute w-3/12 my-36 mx-auto right-0 left-0 bg-black text-white p-6 rounded-lg bg-opacity-80">
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="absolute w-3/12 my-36 mx-auto right-0 left-0 bg-black text-white p-6 rounded-lg bg-opacity-80"
+      >
         <h1 className="text-3xl font-bold p-4">
           {isSignIn ? "Sign In" : "Sign Up"}
         </h1>
@@ -32,16 +97,22 @@ const Login = () => {
         )}
 
         <input
+          ref={email}
           className="bg-gray-700 py-4 px-2 my-2 rounded-md w-full"
           type="text"
           placeholder="Email ID"
         />
         <input
+          ref={password}
           className="bg-gray-700 py-4 px-2 my-2 rounded-md w-full"
           type="password"
           placeholder="Password"
         />
-        <button className="py-3 my-4 bg-red-700 rounded-md w-full">
+        <p className="py-2 text-red-700 font-bold text-lg">{errMessage}</p>
+        <button
+          className="py-3 my-4 bg-red-700 rounded-md w-full"
+          onClick={handleSubmit}
+        >
           {isSignIn ? "Sign In" : "Sign Up"}
         </button>
         <p className="py-4">
